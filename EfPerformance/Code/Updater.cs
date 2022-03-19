@@ -25,6 +25,7 @@ internal class Updater
 
             var sw = Stopwatch.StartNew();
             _context.SaveChanges();
+            _context.ChangeTracker.Clear();
             sw.Stop();
             
             output.Add(sw.ElapsedMilliseconds);
