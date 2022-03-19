@@ -9,6 +9,9 @@ namespace EfPerformance.Tests;
 
 public class PerformanceTests : DbTestBase
 {
+    private const int PropLenght = 20;
+    private static readonly Random Random = new();
+    
     [Fact]
     void loop_creates_any_number_of_jobs()
     {
@@ -30,6 +33,7 @@ public class PerformanceTests : DbTestBase
 
     private string GenerateRandomString()
     {
-        return "ciao";
-    }
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        return new string(Enumerable.Repeat(chars, PropLenght)
+            .Select(s => s[Random.Next(s.Length)]).ToArray());    }
 }
