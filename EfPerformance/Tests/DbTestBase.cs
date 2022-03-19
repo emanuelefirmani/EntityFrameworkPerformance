@@ -16,6 +16,8 @@ public class DbTestBase
     {
         SqlConnection = new SqlConnection(Constants.DbConnectionString);
         DbContext = new EfDbContext(Constants.DbConnectionString);
+
+        SqlConnection.Execute("DELETE FROM Jobs");
     }
 }
 
