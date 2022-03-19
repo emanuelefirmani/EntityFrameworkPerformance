@@ -13,11 +13,17 @@ public class PerformanceTests : DbTestBase
     private static readonly Random Random = new();
     
     [Fact]
-    void loop_creates_any_number_of_jobs()
+    void updater_updates_all_records()
     {
+        var testStartedAt = DateTime.Now;
         CreateJobs(5);
+        
+        var executionTimes = new Updater(DbContext).UpdateAllJobs(DateTime.Now);
 
-        DbContext.Jobs.Count().Should().Be(5);
+        var actual = DbContext.Jobs.Select(x => x.LastUpdatedAt).ToList();
+        actual.All(x => x > testStartedAt).Should().BeTrue();
+
+        executionTimes.Average().Should().BeGreaterThan(0);
     }
 
     private void CreateJobs(int countOfJobs)
