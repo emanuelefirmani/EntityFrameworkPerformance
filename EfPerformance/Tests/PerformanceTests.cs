@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Dapper;
 using EfPerformance.Code;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EfPerformance.Tests;
 
@@ -11,20 +13,46 @@ public class PerformanceTests : DbTestBase
 {
     private const int PropLenght = 20;
     private static readonly Random Random = new();
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public PerformanceTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
     
+    [Theory]
+    [InlineData(100)]
+    [InlineData(1000)]
+    // [InlineData(5000)]                                   <= run at your risk
+    void performance_should_not_degrade(int numberOfJobs)
+    {
+        CreateJobs(numberOfJobs);
+        
+        var executionTimes = new Updater(DbContext).UpdateAllJobs(DateTime.Now);
+        LogExecutionTimes(executionTimes);
+        
+        var tenth = numberOfJobs / 10;
+        var averageFirstTenth = executionTimes.Skip(1).Take(tenth).Average();
+        var averageLastTenth = executionTimes.Skip(executionTimes.Count - tenth).Average();
+
+        averageLastTenth.Should().BeLessOrEqualTo(averageFirstTenth * 10);
+    }
+
     [Fact]
     void updater_updates_all_records()
     {
         var testStartedAt = DateTime.Now;
-        CreateJobs(5);
+        CreateJobs(25);
         
         var executionTimes = new Updater(DbContext).UpdateAllJobs(DateTime.Now);
+        LogExecutionTimes(executionTimes);
 
         var actual = DbContext.Jobs.Select(x => x.LastUpdatedAt).ToList();
         actual.All(x => x > testStartedAt).Should().BeTrue();
-
-        executionTimes.Average().Should().BeGreaterThan(0);
     }
+
+    private void LogExecutionTimes(List<long> executionTimes) =>
+        executionTimes.ForEach(x => _testOutputHelper.WriteLine(x.ToString()));
 
     private void CreateJobs(int countOfJobs)
     {
